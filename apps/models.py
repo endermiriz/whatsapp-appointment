@@ -21,6 +21,3 @@ class PhoneNumber(db.Entity):
     user = Required(User)
     is_active = Required(bool)
     number = Required(str)
-
-
-db.generate_mapping()
