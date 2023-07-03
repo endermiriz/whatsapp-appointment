@@ -53,7 +53,7 @@ def send_message(message: Message):
     client = Client(account_sid, auth_token)
 
     message = client.messages.create(
-        body="Hello {}!".format(message.recipient.name),
+        body="Hello {}!".format(message.recipient.username),
         from_="whatsapp:{}".format(os.getenv("PHONE_NUMBER")),
         to=message.recipient.phone_number,
     )
