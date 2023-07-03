@@ -1,9 +1,11 @@
 import os
-from dotenv import load_dotenv
+
 
 class Config(object):
-    """
-    Variables that use os.getenv() function should be changed
-    in .env file.
-    """
-    load_dotenv()
+    FLASK_DEBUG = os.getenv("DEBUG")
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    PONY = {
+        "provider": os.getenv("PROVIDER", "sqlite"),
+        "filename": os.getenv("DB_FILENAME", "project.db"),
+        "create_db": bool(os.getenv("CREATE_DB", True)),
+    }
