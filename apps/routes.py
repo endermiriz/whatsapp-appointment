@@ -1,58 +1,62 @@
 from apps import app
 from flask import request
-import sqlite3
-from twilio.twiml.messaging_response import MessagingResponse
-import os
 from twilio.rest import Client
+from datetime import datetime
+import os
+from apps.models import *
 
-
-connection = sqlite3.connect('veritabani.db',check_same_thread=False)
-cursor = connection.cursor()
 
 def db_check_message(name, phone, message):
-    sql = "SELECT * FROM kullanıcılar WHERE number = ?"
-    cursor.execute(sql, (phone,)) # Numarayı arat
-    results = cursor.fetchall() # Gelenleri fetchle
+    recipient = Recipient.get(phone_number=phone)
+    if recipient:
+        print("Numara bulundu.")
+        print(f"Adi: {recipient.username}")
+        print(f"Numara: {recipient.phone_number}")
 
-    # Sonuçları işle
-    if len(results) > 0:
-        for row in results:
-            print("Adı: ", row[1])
-            print("Numara: ", row[2])
-            print("Eski Mesaj: ", row[3])
-        print("Yeni Mesaj: ",message)
-        update_sql = "UPDATE kullanıcılar SET message = ? WHERE number = ?"
-        cursor.execute(update_sql, (message, phone))
-        connection.commit()
+        print("Gonderilen mesajlar\n")
+        print("********************************\n")
+
+        for message in recipient.messages:
+            print(f"Mesaj: {message.text}")
+            print(f"Gonderilme tarihi: {message.sent_at}")
+            print(f"------------------------------\n")
+
+        print("********************************\n")
+        print(f"Yeni mesaj: {message}")
+
     else:
+        print("Numara bulunamadi. Yeni alici database'e ekleniyor...")
+        recipient = Recipient(username=name, phone_number=phone)
+        print("Yeni numara basariyla eklendi.")
 
-        print("Numara bulunamadı.")
-        insert_sql = "INSERT INTO kullanıcılar (name, number, message) VALUES (?, ?, ?)"
-        cursor.execute(insert_sql, (name, phone, message))
-        connection.commit()
-        return send_message(name,phone)
-
-
+    new_message = Message(text=message, sent_at=datetime.now(), recipient=recipient)
+    return send_message(new_message)
 
 
-@app.route("/msgpost",methods = ['POST'])
+@app.route("/msgpost", methods=["POST"])
 def get_message():
-    userMsg = request.form.get('Body')
-    userPhone = request.form.get('From', None)
-    profileName = request.form.get('ProfileName', None)
+    data = request.get_json()
 
-    db_check_message(profileName, userPhone, userMsg)
+    to_name = data["to_name"]
+    userPhone = data["to"]
+    userMsg = data["message"]
+
+    db_check_message(to_name, userPhone, userMsg)
     return "Status-200"
 
-def send_message(name, number):
-    account_sid = 'accounts-id'
-    auth_token = 'auth-token-id'
+
+def send_message(message: Message):
+    account_sid = "accounts-id"
+    auth_token = "auth-token-id"
+
+    print("Mesaj gonderiliyor...")
     client = Client(account_sid, auth_token)
 
     message = client.messages.create(
-        body='Hello {}!'.format(name),
-        from_='whatsapp:YOUR-WHATSAPP-BOTS-NUM',
-        to=number
+        body="Hello {}!".format(message.recipient.name),
+        from_="whatsapp:{}".format(os.getenv("PHONE_NUMBER")),
+        to=message.recipient.phone_number,
     )
 
     print(message.sid)
+    print("Mesaj gonderildi.")

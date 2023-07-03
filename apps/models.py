@@ -1,23 +1,17 @@
+from datetime import datetime
 from pony.orm import *
-
-
-db = Database()
-
-
-class User(db.Entity):
-    id = PrimaryKey(int, auto=True)
-    messages = Set("Message")
-    phone_numbers = Set("PhoneNumber")
+from apps import db
 
 
 class Message(db.Entity):
     id = PrimaryKey(int, auto=True)
-    user = Required(User)
     text = Required(str)
+    sent_at = Required(datetime)
+    recipient = Required("Recipient")
 
 
-class PhoneNumber(db.Entity):
+class Recipient(db.Entity):
     id = PrimaryKey(int, auto=True)
-    user = Required(User)
-    is_active = Required(bool)
-    number = Required(str)
+    username = Required(str)
+    phone_number = Required(str, unique=True)
+    messages = Set(Message)

@@ -2,6 +2,7 @@ import os
 
 
 class Config(object):
+    FLASK_DEBUG = os.getenv("DEBUG")
     SECRET_KEY = os.getenv("SECRET_KEY")
     PONY = {
         "provider": os.getenv("PROVIDER", "sqlite"),
